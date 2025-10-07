@@ -4,6 +4,9 @@
 #
 # Args (in the form of global constants below):
 #  - FILE_URL -- the file to check
+#  - NTFY_TAG -- the tag to use for ntfy.sh notifications
+#  - jq expression -- how to extract the relevant part of the file;
+#    this is not factored out but see the curl-line below
 
 
 echo "Hi!"
@@ -15,7 +18,7 @@ NTFY_TAG=crajobs
 contents=""
 while [ 1 ];
 do
-    contents1=`curl -s -L "$FILE_URL" | jq . | rg -v "modified_time"`
+    contents1=`curl -s -L "$FILE_URL" | jq '.data | map({title: .title, place: .company.name})'`
     echo -e 'Checking for updates on ' $(date) 
 
     if [[ "$contents" == "" ]]; then
