@@ -5,8 +5,10 @@
 # Args (in the form of global constants below):
 #  - FILE_URL -- the file to check
 #  - NTFY_TAG -- the tag to use for ntfy.sh notifications
+# Other tunable parameters:
 #  - jq expression -- how to extract the relevant part of the file;
 #    this is not factored out but see the curl-line below
+#  - sleep time -- how often to check (currently 1 hour)
 
 
 echo "Hi!"
@@ -16,24 +18,31 @@ NTFY_TAG=crajobs
 
 
 contents=""
-while [ 1 ];
+ERASELINE='\033[1A\033[2K'
+maybeerase=""
+while true;
 do
-    contents1=`curl -s -L "$FILE_URL" | jq '.data | map({title: .title, place: .company.name})'`
-    echo -e 'Checking for updates on ' $(date) 
+    contents1=$(curl -s -L "$FILE_URL" | jq '.data | map({title: .title, place: .company.name})')
+    echo -e "${maybeerase}Checking for updates on " "$(date)"
 
-    if [[ "$contents" == "" ]]; then
-      echo 'No past info (initial run), see you in 3 hours'
+    if [[ "$contents" == "" ]]; then                        # first run
+      echo 'No past info (initial run), see you in 1 hour'
       contents="$contents1"
-    else
-      if [[ "$contents" != "$contents1" ]]; then
-        echo 'Updated! Changes:'
-        diff <(echo "$contents") <(echo "$contents1") | rg -v '<'
-        curl -s -d 'CRA Jobs status changed' ntfy.sh/$NTFY_TAG
+      maybeerase="${ERASELINE}${ERASELINE}"
+    else                                                   # subsequent runs
+      if [[ "$contents" != "$contents1" ]]; then           # changed
+        echo -e "${maybeerase}Updated! Changes:"
+        df=$(diff <(echo -e "$contents") <(echo "$contents1") | rg -v '<')
+        dfclean=$(echo -e "$df" | sed '1d;$d' | sed 's/^>   //')
+        curl -s -d "CRA Jobs status changed:
+${dfclean}" ntfy.sh/$NTFY_TAG
         contents="$contents1"
-      else
-        echo -e 'No updates. Will try in 3 hours...'
+        maybeerase=""
+      else                                                  # not changed
+        echo -e 'No updates. Will try in 1 hour...'
+        maybeerase="${ERASELINE}${ERASELINE}"
       fi
     fi
 
-    sleep 10800
+    sleep 3600
 done
