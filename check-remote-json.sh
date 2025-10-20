@@ -33,9 +33,10 @@ do
       if [[ "$contents" != "$contents1" ]]; then           # changed
         echo -e "${maybeerase}Updated! Changes:"
         df=$(diff <(echo -e "$contents") <(echo "$contents1") | rg -v '<')
-        dfclean=$(echo -e "$df" | sed '1d;$d' | sed 's/^>   //')
+        dfclean=$(echo -e "$df" | sed '1d;$d' | sed 's/^>   //' | head -n -2)
+        echo -e "$dfclean"
         curl -s -d "CRA Jobs status changed:
-${dfclean}" ntfy.sh/$NTFY_TAG
+${dfclean}" ntfy.sh/$NTFY_TAG 1>/dev/null 2>&1
         contents="$contents1"
         maybeerase=""
       else                                                  # not changed
