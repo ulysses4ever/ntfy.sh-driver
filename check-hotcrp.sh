@@ -9,19 +9,19 @@
 
 echo "Hi!"
 
-SUBSITE="oopsla24"
+SUBSITE="ics2026-cycle-2"
 SESSION=""
 
 while [ 1 ];
 do
-    count=`curl -s --cookie "hotcrpsession=$SESSION" https://$SUBSITE.hotcrp.com/u/0/ | grep -c "Submitted"`
+    count=`curl -s --cookie "hotcrpsession=$SESSION" https://$SUBSITE.hotcrp.com | grep -c "Submitted"`
 
     if [ "$count" == "0" ]
     then
        echo "Updated!"
-       curl -d "HotCrp status changed" ntfy.sh/hotcrp
+       curl -sd "HotCrp status changed" ntfy.sh/hotcrp 1>/dev/null 2>&1
        exit 0   
     fi
-    echo -e '\e[1A\e[KNo updates on' $(date) '. Will try in a minute...'
-    sleep 60
+    echo -e '\e[1A\e[KNo updates on' $(date) '. Will try in 5 minutes...'
+    sleep 300
 done
